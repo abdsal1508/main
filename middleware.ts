@@ -9,7 +9,8 @@ export async function middleware(req: NextRequest) {
   if (
     req.nextUrl.pathname.startsWith("/_next") ||
     req.nextUrl.pathname.startsWith("/api") ||
-    req.nextUrl.pathname.includes(".")
+    req.nextUrl.pathname.includes(".") ||
+    req.nextUrl.pathname === "/"
   ) {
     return res
   }
@@ -26,7 +27,7 @@ export async function middleware(req: NextRequest) {
 
     // Auth routes
     const authRoutes = ["/auth/login", "/auth/signup"]
-    const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+    const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname === route)
 
     // If user is not signed in and trying to access protected route
     if (!session && isProtectedRoute) {
@@ -43,6 +44,14 @@ export async function middleware(req: NextRequest) {
     return res
   } catch (error) {
     console.error("Middleware error:", error)
+    // On error, allow access to auth routes but protect others
+    const protectedRoutes = ["/dashboard", "/claims", "/patients", "/admin"]
+    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+
+    if (isProtectedRoute) {
+      return NextResponse.redirect(new URL("/auth/login", req.url))
+    }
+
     return res
   }
 }

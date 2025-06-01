@@ -56,10 +56,8 @@ export default function SignupPage() {
         title: "Account created!",
         description: "Welcome to ProCentric! You can now start using the system.",
       })
-      // Add a small delay then redirect
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1000)
+      // Force redirect to dashboard
+      window.location.href = "/dashboard"
     } catch (error: any) {
       console.error("Signup error:", error)
       toast({

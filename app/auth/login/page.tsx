@@ -42,10 +42,8 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       })
-      // Add a small delay then redirect
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1000)
+      // Force redirect to dashboard
+      window.location.href = "/dashboard"
     } catch (error: any) {
       console.error("Login error:", error)
       toast({

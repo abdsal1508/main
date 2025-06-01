@@ -83,8 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await authService.getCurrentUser()
       console.log("Sign in successful:", currentUser)
       setUser(currentUser)
-      // Remove this line - let middleware handle redirect
-      // router.push("/dashboard")
+      // Remove automatic redirect - let the login page handle it
     }
   }
 
@@ -95,8 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await authService.getCurrentUser()
       console.log("Sign up successful:", currentUser)
       setUser(currentUser)
-      // Remove this line - let middleware handle redirect
-      // router.push("/dashboard")
+      // Remove automatic redirect - let the signup page handle it
     }
   }
 
