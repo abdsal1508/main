@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -41,6 +43,13 @@ export default function SignupPage() {
     }
   }, [user, authLoading, router])
 
+  const validateEmail = (email: string) => {
+    // More comprehensive email validation
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+    return emailRegex.test(email)
+  }
+
   const validateForm = () => {
     let isValid = true
     const newErrors = { ...errors }
@@ -62,7 +71,7 @@ export default function SignupPage() {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required"
       isValid = false
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!validateEmail(formData.email.trim())) {
       newErrors.email = "Please enter a valid email address"
       isValid = false
     } else {
@@ -97,22 +106,22 @@ export default function SignupPage() {
     return isValid
   }
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value.trim(), // Trim whitespace
     }))
   }
 
-  const handleRoleChange = (value) => {
+  const handleRoleChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
       role: value,
     }))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!validateForm()) {
@@ -120,10 +129,19 @@ export default function SignupPage() {
     }
 
     setLoading(true)
-    console.log("Attempting signup with:", formData.email)
+    console.log("Attempting signup with:", {
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      role: formData.role,
+    })
 
     try {
-      await signUp(formData.email, formData.password, formData.firstName, formData.lastName, formData.role)
+      // Clean the email before sending
+      const cleanEmail = formData.email.toLowerCase().trim()
+
+      await signUp(cleanEmail, formData.password, formData.firstName.trim(), formData.lastName.trim(), formData.role)
+
       console.log("Signup successful")
 
       toast({
@@ -133,11 +151,26 @@ export default function SignupPage() {
 
       // Redirect to login page after successful signup
       router.push("/auth/login")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error)
+
+      let errorMessage = "Please try again."
+
+      if (error.message) {
+        if (error.message.includes("Email address") && error.message.includes("invalid")) {
+          errorMessage = "Please enter a valid email address. Make sure it follows the format: user@domain.com"
+        } else if (error.message.includes("User already registered")) {
+          errorMessage = "An account with this email already exists. Please try logging in instead."
+        } else if (error.message.includes("Password")) {
+          errorMessage = "Password must be at least 6 characters long."
+        } else {
+          errorMessage = error.message
+        }
+      }
+
       toast({
         title: "Signup failed",
-        description: error.message || "Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -193,6 +226,7 @@ export default function SignupPage() {
                     placeholder="John"
                     value={formData.firstName}
                     onChange={handleChange}
+                    required
                   />
                   {errors.firstName && <p className="text-sm text-red-500">{errors.firstName}</p>}
                 </div>
@@ -204,6 +238,7 @@ export default function SignupPage() {
                     placeholder="Doe"
                     value={formData.lastName}
                     onChange={handleChange}
+                    required
                   />
                   {errors.lastName && <p className="text-sm text-red-500">{errors.lastName}</p>}
                 </div>
@@ -215,16 +250,18 @@ export default function SignupPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="user@example.com"
                   value={formData.email}
                   onChange={handleChange}
+                  required
                 />
                 {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+                <p className="text-xs text-gray-500">Use a valid email format like: user@domain.com</p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Select onValueChange={handleRoleChange} value={formData.role}>
+                <Select onValueChange={handleRoleChange} value={formData.role} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -246,8 +283,11 @@ export default function SignupPage() {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
+                  required
+                  minLength={6}
                 />
                 {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+                <p className="text-xs text-gray-500">Must be at least 6 characters long</p>
               </div>
 
               <div className="space-y-2">
@@ -259,6 +299,7 @@ export default function SignupPage() {
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  required
                 />
                 {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword}</p>}
               </div>
