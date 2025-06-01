@@ -24,6 +24,27 @@ export const authService = {
     })
 
     if (error) throw error
+
+    // Manually create user profile if trigger fails
+    try {
+      const { error: profileError } = await supabase.from("users").insert([
+        {
+          id: data.user?.id,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role,
+        },
+      ])
+
+      if (profileError && profileError.code !== "23505") {
+        // Ignore duplicate key errors
+        console.error("Error creating user profile:", profileError)
+      }
+    } catch (err) {
+      console.error("Error in manual profile creation:", err)
+    }
+
     return data
   },
 
