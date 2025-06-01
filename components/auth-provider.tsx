@@ -23,8 +23,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        const currentUser = await authService.getCurrentUser()
-        setUser(currentUser)
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (session?.user) {
+          const currentUser = await authService.getCurrentUser()
+          setUser(currentUser)
+        }
       } catch (error) {
         console.error("Error getting initial session:", error)
       } finally {
@@ -38,9 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email)
+      console.log("Auth state changed:", event)
 
-      if (session?.user) {
+      if (event === "SIGNED_IN" && session?.user) {
         try {
           const currentUser = await authService.getCurrentUser()
           setUser(currentUser)
@@ -48,9 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Error getting user profile:", error)
           setUser(null)
         }
-      } else {
+      } else if (event === "SIGNED_OUT") {
         setUser(null)
       }
+
       setLoading(false)
     })
 
@@ -58,37 +65,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true)
-    try {
-      await authService.signIn(email, password)
-      // User will be set via the auth state change listener
-    } catch (error) {
-      setLoading(false)
-      throw error
+    const data = await authService.signIn(email, password)
+    if (data.user) {
+      const currentUser = await authService.getCurrentUser()
+      setUser(currentUser)
     }
   }
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, role?: string) => {
-    setLoading(true)
-    try {
-      await authService.signUp(email, password, firstName, lastName, role)
-      // User will be set via the auth state change listener
-    } catch (error) {
-      setLoading(false)
-      throw error
+    const data = await authService.signUp(email, password, firstName, lastName, role)
+    if (data.user) {
+      const currentUser = await authService.getCurrentUser()
+      setUser(currentUser)
     }
   }
 
   const signOut = async () => {
-    setLoading(true)
-    try {
-      await authService.signOut()
-      setUser(null)
-    } catch (error) {
-      console.error("Error signing out:", error)
-    } finally {
-      setLoading(false)
-    }
+    await authService.signOut()
+    setUser(null)
   }
 
   return <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>

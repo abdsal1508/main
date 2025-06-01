@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useAuth } from "./auth-provider"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -16,18 +15,10 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push("/auth/login")
-        return
-      }
-
-      if (requiredRole && user.role !== requiredRole && user.role !== "admin") {
-        router.push("/dashboard")
-        return
-      }
+    if (!loading && !user) {
+      router.push("/auth/login")
     }
-  }, [user, loading, router, requiredRole])
+  }, [user, loading, router])
 
   if (loading) {
     return (
@@ -42,7 +33,14 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (requiredRole && user.role !== requiredRole && user.role !== "admin") {
-    return null
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    )
   }
 
   return <>{children}</>

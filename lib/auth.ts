@@ -24,27 +24,6 @@ export const authService = {
     })
 
     if (error) throw error
-
-    // Manually create user profile if trigger fails
-    try {
-      const { error: profileError } = await supabase.from("users").insert([
-        {
-          id: data.user?.id,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          role: role,
-        },
-      ])
-
-      if (profileError && profileError.code !== "23505") {
-        // Ignore duplicate key errors
-        console.error("Error creating user profile:", profileError)
-      }
-    } catch (err) {
-      console.error("Error in manual profile creation:", err)
-    }
-
     return data
   },
 
@@ -75,34 +54,15 @@ export const authService = {
 
     if (error) {
       console.error("Error fetching user profile:", error)
-      // If profile doesn't exist, create it using user metadata
-      const { data: newProfile, error: createError } = await supabase
-        .from("users")
-        .insert([
-          {
-            id: user.id,
-            email: user.email!,
-            first_name: user.user_metadata?.first_name || "User",
-            last_name: user.user_metadata?.last_name || "Name",
-            role: user.user_metadata?.role || "staff",
-          },
-        ])
-        .select()
-        .single()
-
-      if (createError) {
-        console.error("Error creating user profile:", createError)
-        // Return a basic user object if we can't create the profile
-        return {
-          id: user.id,
-          email: user.email!,
-          first_name: user.user_metadata?.first_name || "User",
-          last_name: user.user_metadata?.last_name || "Name",
-          role: user.user_metadata?.role || "staff",
-          created_at: user.created_at,
-        } as User
-      }
-      return newProfile as User
+      // Return a basic user object using auth metadata
+      return {
+        id: user.id,
+        email: user.email!,
+        first_name: user.user_metadata?.first_name || "User",
+        last_name: user.user_metadata?.last_name || "Name",
+        role: user.user_metadata?.role || "staff",
+        created_at: user.created_at,
+      } as User
     }
 
     return profile as User
