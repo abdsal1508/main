@@ -1,8 +1,6 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts"
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ClaimStatusChartProps {
   data: {
@@ -14,43 +12,51 @@ interface ClaimStatusChartProps {
 }
 
 export function ClaimStatusChart({ data }: ClaimStatusChartProps) {
-  const chartData = [
-    { name: "Approved", value: data.approved, color: "#10b981" },
-    { name: "Pending", value: data.pending, color: "#f59e0b" },
-    { name: "Rejected", value: data.rejected, color: "#ef4444" },
-  ]
+  const total = data.total || 1 // Avoid division by zero
 
   return (
     <Card className="w-full">
-      <ChartContainer
-        config={{
-          approved: {
-            label: "Approved",
-            color: "#10b981",
-          },
-          pending: {
-            label: "Pending",
-            color: "#f59e0b",
-          },
-          rejected: {
-            label: "Rejected",
-            color: "#ef4444",
-          },
-        }}
-        className="h-[300px]"
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={chartData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value">
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<ChartTooltipContent />} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </ChartContainer>
+      <CardHeader>
+        <CardTitle>Claim Status Distribution</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Approved</span>
+            <span className="text-sm font-medium">{data.approved}</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(data.approved / total) * 100}%` }}></div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Pending</span>
+            <span className="text-sm font-medium">{data.pending}</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${(data.pending / total) * 100}%` }}></div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Rejected</span>
+            <span className="text-sm font-medium">{data.rejected}</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-red-500 h-2 rounded-full" style={{ width: `${(data.rejected / total) * 100}%` }}></div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between font-medium">
+            <span>Total Claims</span>
+            <span>{data.total}</span>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   )
 }
