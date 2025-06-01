@@ -15,11 +15,21 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/auth/login")
-    }
-  }, [user, loading, router])
+    console.log("ProtectedRoute - user:", user, "loading:", loading)
 
+    if (!loading && !user) {
+      console.log("No user found, redirecting to login")
+      router.push("/auth/login")
+      return
+    }
+
+    if (user && requiredRole && user.role !== requiredRole && user.role !== "admin") {
+      console.log("User role insufficient:", user.role, "required:", requiredRole)
+      return
+    }
+  }, [user, loading, router, requiredRole])
+
+  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -28,10 +38,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     )
   }
 
+  // Show nothing while redirecting
   if (!user) {
     return null
   }
 
+  // Show access denied for insufficient role
   if (requiredRole && user.role !== requiredRole && user.role !== "admin") {
     return (
       <div className="flex items-center justify-center min-h-screen">
