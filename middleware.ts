@@ -5,12 +5,12 @@ import type { NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  // Skip middleware for static files and API routes
+  // Skip middleware for static files, API routes, and root
   if (
     req.nextUrl.pathname.startsWith("/_next") ||
     req.nextUrl.pathname.startsWith("/api") ||
-    req.nextUrl.pathname.includes(".") ||
-    req.nextUrl.pathname === "/"
+    req.nextUrl.pathname === "/" ||
+    req.nextUrl.pathname.includes(".")
   ) {
     return res
   }
@@ -21,13 +21,15 @@ export async function middleware(req: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession()
 
+    console.log("Middleware - Path:", req.nextUrl.pathname, "Session:", !!session)
+
     // Protected routes
     const protectedRoutes = ["/dashboard", "/claims", "/patients", "/admin"]
     const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
 
     // Auth routes
     const authRoutes = ["/auth/login", "/auth/signup"]
-    const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname === route)
+    const isAuthRoute = authRoutes.includes(req.nextUrl.pathname)
 
     // If user is not signed in and trying to access protected route
     if (!session && isProtectedRoute) {
@@ -44,14 +46,6 @@ export async function middleware(req: NextRequest) {
     return res
   } catch (error) {
     console.error("Middleware error:", error)
-    // On error, allow access to auth routes but protect others
-    const protectedRoutes = ["/dashboard", "/claims", "/patients", "/admin"]
-    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
-
-    if (isProtectedRoute) {
-      return NextResponse.redirect(new URL("/auth/login", req.url))
-    }
-
     return res
   }
 }

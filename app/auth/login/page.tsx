@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,7 +23,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   const [loading, setLoading] = useState(false)
 
   const form = useForm<LoginFormValues>({
@@ -34,16 +34,31 @@ export default function LoginPage() {
     },
   })
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      console.log("User already logged in, redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [user, router])
+
   async function onSubmit(data: LoginFormValues) {
     setLoading(true)
+    console.log("Attempting login with:", data.email)
+
     try {
       await signIn(data.email, data.password)
+      console.log("Login successful, redirecting...")
+
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       })
-      // Force redirect to dashboard
-      window.location.href = "/dashboard"
+
+      // Force navigation to dashboard
+      setTimeout(() => {
+        window.location.href = "/dashboard"
+      }, 500)
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
@@ -54,6 +69,17 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Don't render the form if user is already logged in
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-teal-50 to-white">
+        <div className="text-center">
+          <p>Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
