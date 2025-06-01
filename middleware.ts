@@ -1,71 +1,119 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
   // Skip middleware for static files, API routes, and root
   if (
-    req.nextUrl.pathname.startsWith("/_next") ||
-    req.nextUrl.pathname.startsWith("/api") ||
-    req.nextUrl.pathname === "/" ||
-    req.nextUrl.pathname.includes(".")
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.includes(".")
   ) {
-    return res
+    return response
   }
 
   try {
-    const supabase = createMiddlewareClient({ req, res })
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          },
+          remove(name: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value: "",
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value: "",
+              ...options,
+            })
+          },
+        },
+      },
+    )
 
-    console.log("Middleware - Path:", req.nextUrl.pathname, "Session:", !!session, "Error:", error)
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    console.log("Middleware - Path:", request.nextUrl.pathname, "User:", !!user, "Error:", error)
 
     // Protected routes that require authentication
     const protectedRoutes = ["/dashboard", "/claims", "/patients", "/admin"]
-    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+    const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
     // Auth routes
     const authRoutes = ["/auth/login", "/auth/signup"]
-    const isAuthRoute = authRoutes.includes(req.nextUrl.pathname)
+    const isAuthRoute = authRoutes.includes(request.nextUrl.pathname)
 
-    // If there's an error getting the session, allow access to auth routes
+    // If there's an error getting the user, allow access to auth routes
     if (error) {
-      console.log("Session error:", error)
+      console.log("User error:", error)
       if (isProtectedRoute) {
-        return NextResponse.redirect(new URL("/auth/login", req.url))
+        return NextResponse.redirect(new URL("/auth/login", request.url))
       }
-      return res
+      return response
     }
 
     // If user is not signed in and trying to access protected route
-    if (!session && isProtectedRoute) {
-      console.log("No session, redirecting to login from:", req.nextUrl.pathname)
-      return NextResponse.redirect(new URL("/auth/login", req.url))
+    if (!user && isProtectedRoute) {
+      console.log("No user, redirecting to login from:", request.nextUrl.pathname)
+      return NextResponse.redirect(new URL("/auth/login", request.url))
     }
 
     // If user is signed in and trying to access auth pages, redirect to dashboard
-    if (session && isAuthRoute) {
-      console.log("User logged in, redirecting to dashboard from:", req.nextUrl.pathname)
-      return NextResponse.redirect(new URL("/dashboard", req.url))
+    if (user && isAuthRoute) {
+      console.log("User logged in, redirecting to dashboard from:", request.nextUrl.pathname)
+      return NextResponse.redirect(new URL("/dashboard", request.url))
     }
 
-    return res
+    return response
   } catch (error) {
     console.error("Middleware error:", error)
 
     // On error, allow access to auth routes but protect others
     const protectedRoutes = ["/dashboard", "/claims", "/patients", "/admin"]
-    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+    const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
     if (isProtectedRoute) {
-      return NextResponse.redirect(new URL("/auth/login", req.url))
+      return NextResponse.redirect(new URL("/auth/login", request.url))
     }
 
-    return res
+    return response
   }
 }
 
