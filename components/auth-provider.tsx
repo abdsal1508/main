@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 import { authService, type User } from "@/lib/auth"
 import { supabase } from "@/lib/supabase"
@@ -39,6 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email)
+
       if (session?.user) {
         try {
           const currentUser = await authService.getCurrentUser()
@@ -57,16 +58,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    await authService.signIn(email, password)
+    setLoading(true)
+    try {
+      await authService.signIn(email, password)
+      // User will be set via the auth state change listener
+    } catch (error) {
+      setLoading(false)
+      throw error
+    }
   }
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, role?: string) => {
-    await authService.signUp(email, password, firstName, lastName, role)
+    setLoading(true)
+    try {
+      await authService.signUp(email, password, firstName, lastName, role)
+      // User will be set via the auth state change listener
+    } catch (error) {
+      setLoading(false)
+      throw error
+    }
   }
 
   const signOut = async () => {
-    await authService.signOut()
-    setUser(null)
+    setLoading(true)
+    try {
+      await authService.signOut()
+      setUser(null)
+    } catch (error) {
+      console.error("Error signing out:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>

@@ -24,22 +24,6 @@ export const authService = {
     })
 
     if (error) throw error
-
-    // Create user profile in our users table
-    if (data.user) {
-      const { error: profileError } = await supabase.from("users").insert([
-        {
-          id: data.user.id,
-          email: data.user.email,
-          first_name: firstName,
-          last_name: lastName,
-          role: role,
-        },
-      ])
-
-      if (profileError) throw profileError
-    }
-
     return data
   },
 
@@ -68,7 +52,26 @@ export const authService = {
     // Get user profile from our users table
     const { data: profile, error } = await supabase.from("users").select("*").eq("id", user.id).single()
 
-    if (error) throw error
+    if (error) {
+      console.error("Error fetching user profile:", error)
+      // If profile doesn't exist, create it
+      const { data: newProfile, error: createError } = await supabase
+        .from("users")
+        .insert([
+          {
+            id: user.id,
+            email: user.email!,
+            first_name: user.user_metadata?.first_name || "User",
+            last_name: user.user_metadata?.last_name || "Name",
+            role: user.user_metadata?.role || "staff",
+          },
+        ])
+        .select()
+        .single()
+
+      if (createError) throw createError
+      return newProfile as User
+    }
 
     return profile as User
   },

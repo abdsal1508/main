@@ -54,10 +54,11 @@ export default function SignupPage() {
       await signUp(data.email, data.password, data.firstName, data.lastName, data.role)
       toast({
         title: "Account created!",
-        description: "Please check your email to verify your account.",
+        description: "Welcome to ProCentric! You can now start using the system.",
       })
-      router.push("/auth/login")
+      router.push("/dashboard")
     } catch (error: any) {
+      console.error("Signup error:", error)
       toast({
         title: "Signup failed",
         description: error.message || "Please try again.",
