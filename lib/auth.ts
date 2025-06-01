@@ -49,11 +49,60 @@ export const authService = {
 
     if (!user) return null
 
-    // Get user profile from our users table
-    const { data: profile, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+    try {
+      // Get user profile from our users table
+      const { data: profile, error } = await supabase.from("users").select("*").eq("id", user.id).single()
 
-    if (error) {
-      console.error("Error fetching user profile:", error)
+      if (error) {
+        console.error("Error fetching user profile:", error)
+
+        // If profile doesn't exist, create it
+        if (error.code === "PGRST116") {
+          console.log("Creating user profile...")
+          const newProfile = {
+            id: user.id,
+            email: user.email!,
+            first_name: user.user_metadata?.first_name || "User",
+            last_name: user.user_metadata?.last_name || "Name",
+            role: user.user_metadata?.role || "staff",
+          }
+
+          const { data: createdProfile, error: createError } = await supabase
+            .from("users")
+            .insert(newProfile)
+            .select()
+            .single()
+
+          if (createError) {
+            console.error("Error creating user profile:", createError)
+            // Return a basic user object using auth metadata
+            return {
+              id: user.id,
+              email: user.email!,
+              first_name: user.user_metadata?.first_name || "User",
+              last_name: user.user_metadata?.last_name || "Name",
+              role: user.user_metadata?.role || "staff",
+              created_at: user.created_at,
+            } as User
+          }
+
+          return createdProfile as User
+        }
+
+        // For other errors, return a basic user object
+        return {
+          id: user.id,
+          email: user.email!,
+          first_name: user.user_metadata?.first_name || "User",
+          last_name: user.user_metadata?.last_name || "Name",
+          role: user.user_metadata?.role || "staff",
+          created_at: user.created_at,
+        } as User
+      }
+
+      return profile as User
+    } catch (error) {
+      console.error("Unexpected error in getCurrentUser:", error)
       // Return a basic user object using auth metadata
       return {
         id: user.id,
@@ -64,8 +113,6 @@ export const authService = {
         created_at: user.created_at,
       } as User
     }
-
-    return profile as User
   },
 
   async updateProfile(updates: Partial<User>) {

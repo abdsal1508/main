@@ -28,11 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession()
 
-        console.log("Initial session check:", session?.user?.id)
+        console.log("Initial session check:", session?.user?.id, "Error:", error)
 
-        if (session?.user) {
+        if (session?.user && !error) {
           const currentUser = await authService.getCurrentUser()
           console.log("Current user:", currentUser)
           setUser(currentUser)
