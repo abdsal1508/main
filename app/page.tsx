@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowRight, FileText, Users, Activity, DollarSign } from "lucide-react"
+import { ArrowRight, FileText, Users, Activity, DollarSign, Shield, Zap, Globe } from "lucide-react"
 
 export default function Home() {
   return (
@@ -27,10 +27,14 @@ export default function Home() {
             <Link href="/admin" className="text-sm font-medium">
               Admin
             </Link>
-            <Button variant="outline" size="sm">
-              Log in
-            </Button>
-            <Button size="sm">Sign up</Button>
+            <Link href="/auth/login">
+              <Button variant="outline" size="sm">
+                Log in
+              </Button>
+            </Link>
+            <Link href="/auth/signup">
+              <Button size="sm">Sign up</Button>
+            </Link>
           </nav>
         </div>
       </header>
@@ -45,16 +49,17 @@ export default function Home() {
                   </h1>
                   <p className="max-w-[600px] text-gray-500 md:text-xl">
                     ProCentric simplifies the insurance claim process with ANSI X12 EDI standards and HIPAA compliance.
+                    Complete claim lifecycle management from submission to payment processing.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link href="/dashboard">
+                  <Link href="/auth/signup">
                     <Button size="lg" className="bg-teal-600 hover:bg-teal-700">
                       Get Started
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href="/about">
+                  <Link href="#features">
                     <Button size="lg" variant="outline">
                       Learn More
                     </Button>
@@ -73,7 +78,8 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32">
+
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -81,7 +87,8 @@ export default function Home() {
                   Comprehensive Claims Management
                 </h2>
                 <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Our platform handles the entire claim lifecycle from submission to payment processing.
+                  Our platform handles the entire claim lifecycle from submission to payment processing with
+                  industry-standard compliance.
                 </p>
               </div>
             </div>
@@ -93,7 +100,8 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-sm text-gray-500">
-                    Generate and submit ANSI X12 837 claim files to insurance payers with ease.
+                    Generate and submit ANSI X12 837 claim files to insurance payers with full compliance and
+                    validation.
                   </CardDescription>
                 </CardContent>
                 <CardFooter>
@@ -112,7 +120,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-sm text-gray-500">
-                    Securely manage patient information with HIPAA-compliant storage and access controls.
+                    Securely manage patient information with HIPAA-compliant storage and comprehensive access controls.
                   </CardDescription>
                 </CardContent>
                 <CardFooter>
@@ -131,7 +139,8 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-sm text-gray-500">
-                    Track payments with EDI 835 remittance advice and reconcile accounts efficiently.
+                    Track payments with EDI 835 remittance advice and reconcile accounts efficiently with automated
+                    workflows.
                   </CardDescription>
                 </CardContent>
                 <CardFooter>
@@ -143,6 +152,67 @@ export default function Home() {
                   </Link>
                 </CardFooter>
               </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                  <Shield className="h-8 w-8 text-teal-600" />
+                  <CardTitle className="text-xl">HIPAA Compliance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm text-gray-500">
+                    Built-in HIPAA compliance with encrypted data storage, audit trails, and role-based access controls.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                  <Zap className="h-8 w-8 text-teal-600" />
+                  <CardTitle className="text-xl">Real-time Processing</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm text-gray-500">
+                    Real-time claim status updates, automated clearinghouse integration, and instant validation
+                    feedback.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                  <Globe className="h-8 w-8 text-teal-600" />
+                  <CardTitle className="text-xl">Multi-Payer Support</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-sm text-gray-500">
+                    Support for multiple insurance payers with customizable claim formats and payer-specific
+                    requirements.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Ready to Get Started?</h2>
+                <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Join thousands of healthcare providers who trust ProCentric for their claims management needs.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                <Link href="/auth/signup">
+                  <Button size="lg" className="bg-teal-600 hover:bg-teal-700">
+                    Start Free Trial
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" variant="outline">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
