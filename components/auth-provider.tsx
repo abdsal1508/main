@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, firstName: string, lastName: string, role?: string) => Promise<void>
   signOut: () => Promise<void>
+  resendConfirmation: (email: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -90,8 +91,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push("/dashboard")
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign in error:", error)
+
+      // Handle email not confirmed error
+      if (error.message?.includes("Email not confirmed")) {
+        throw new Error(
+          "Please check your email and click the confirmation link, or contact support to confirm your account.",
+        )
+      }
+
       throw error
     }
   }
@@ -101,6 +110,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authService.signUp(email, password, firstName, lastName, role)
       if (data.user) {
+        // Check if email confirmation is required
+        if (!data.session) {
+          throw new Error("Please check your email for a confirmation link before signing in.")
+        }
+
         const currentUser = await authService.getCurrentUser()
         console.log("Sign up successful:", currentUser)
         setUser(currentUser)
@@ -128,7 +142,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  return <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
+  const resendConfirmation = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email,
+      })
+
+      if (error) throw error
+    } catch (error) {
+      console.error("Resend confirmation error:", error)
+      throw error
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, resendConfirmation }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
