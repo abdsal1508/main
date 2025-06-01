@@ -23,7 +23,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signIn, user } = useAuth()
+  const { signIn, user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(false)
 
   const form = useForm<LoginFormValues>({
@@ -36,11 +36,11 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       console.log("User already logged in, redirecting to dashboard")
       router.push("/dashboard")
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   async function onSubmit(data: LoginFormValues) {
     setLoading(true)
@@ -48,17 +48,12 @@ export default function LoginPage() {
 
     try {
       await signIn(data.email, data.password)
-      console.log("Login successful, redirecting...")
+      console.log("Login successful")
 
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       })
-
-      // Force navigation to dashboard
-      setTimeout(() => {
-        window.location.href = "/dashboard"
-      }, 500)
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
@@ -69,6 +64,18 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-teal-50 to-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-teal-600 mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   // Don't render the form if user is already logged in

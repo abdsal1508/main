@@ -4,7 +4,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { authService, type User } from "@/lib/auth"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 interface AuthContextType {
   user: User | null
@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Get initial session
@@ -27,11 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession()
 
-        console.log("Initial session check:", session?.user?.id)
+        console.log("Initial session check:", session?.user?.id, "Error:", error)
 
-        if (session?.user) {
+        if (session?.user && !error) {
           const currentUser = await authService.getCurrentUser()
           console.log("Current user:", currentUser)
           setUser(currentUser)
@@ -59,7 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const currentUser = await authService.getCurrentUser()
           console.log("User signed in:", currentUser)
           setUser(currentUser)
-          // Don't redirect here, let the component handle it
         } catch (error) {
           console.error("Error getting user profile:", error)
           setUser(null)
@@ -67,42 +68,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (event === "SIGNED_OUT") {
         console.log("User signed out")
         setUser(null)
-        router.push("/auth/login")
       }
 
       setLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [router])
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting to sign in:", email)
-    const data = await authService.signIn(email, password)
-    if (data.user) {
-      const currentUser = await authService.getCurrentUser()
-      console.log("Sign in successful:", currentUser)
-      setUser(currentUser)
-      // Remove automatic redirect - let the login page handle it
+    try {
+      const data = await authService.signIn(email, password)
+      if (data.user) {
+        const currentUser = await authService.getCurrentUser()
+        console.log("Sign in successful:", currentUser)
+        setUser(currentUser)
+
+        // Only redirect if we're on an auth page
+        if (pathname?.startsWith("/auth")) {
+          router.push("/dashboard")
+        }
+      }
+    } catch (error) {
+      console.error("Sign in error:", error)
+      throw error
     }
   }
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, role?: string) => {
     console.log("Attempting to sign up:", email)
-    const data = await authService.signUp(email, password, firstName, lastName, role)
-    if (data.user) {
-      const currentUser = await authService.getCurrentUser()
-      console.log("Sign up successful:", currentUser)
-      setUser(currentUser)
-      // Remove automatic redirect - let the signup page handle it
+    try {
+      const data = await authService.signUp(email, password, firstName, lastName, role)
+      if (data.user) {
+        const currentUser = await authService.getCurrentUser()
+        console.log("Sign up successful:", currentUser)
+        setUser(currentUser)
+
+        // Only redirect if we're on an auth page
+        if (pathname?.startsWith("/auth")) {
+          router.push("/dashboard")
+        }
+      }
+    } catch (error) {
+      console.error("Sign up error:", error)
+      throw error
     }
   }
 
   const signOut = async () => {
     console.log("Signing out")
-    await authService.signOut()
-    setUser(null)
-    router.push("/")
+    try {
+      await authService.signOut()
+      setUser(null)
+      router.push("/")
+    } catch (error) {
+      console.error("Sign out error:", error)
+      throw error
+    }
   }
 
   return <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -33,7 +33,7 @@ type SignupFormValues = z.infer<typeof signupFormSchema>
 
 export default function SignupPage() {
   const router = useRouter()
-  const { signUp } = useAuth()
+  const { signUp, user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(false)
 
   const form = useForm<SignupFormValues>({
@@ -48,16 +48,26 @@ export default function SignupPage() {
     },
   })
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log("User already logged in, redirecting to dashboard")
+      router.push("/dashboard")
+    }
+  }, [user, authLoading, router])
+
   async function onSubmit(data: SignupFormValues) {
     setLoading(true)
+    console.log("Attempting signup with:", data.email)
+
     try {
       await signUp(data.email, data.password, data.firstName, data.lastName, data.role)
+      console.log("Signup successful")
+
       toast({
         title: "Account created!",
         description: "Welcome to ProCentric! You can now start using the system.",
       })
-      // Force redirect to dashboard
-      window.location.href = "/dashboard"
     } catch (error: any) {
       console.error("Signup error:", error)
       toast({
@@ -68,6 +78,29 @@ export default function SignupPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-teal-50 to-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-teal-600 mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render the form if user is already logged in
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-teal-50 to-white">
+        <div className="text-center">
+          <p>Redirecting to dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
