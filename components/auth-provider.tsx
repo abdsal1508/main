@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await authService.getCurrentUser()
       console.log("Sign in successful:", currentUser)
       setUser(currentUser)
-      // Redirect after successful sign in
-      router.push("/dashboard")
+      // Remove this line - let middleware handle redirect
+      // router.push("/dashboard")
     }
   }
 
@@ -95,8 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await authService.getCurrentUser()
       console.log("Sign up successful:", currentUser)
       setUser(currentUser)
-      // Redirect after successful sign up
-      router.push("/dashboard")
+      // Remove this line - let middleware handle redirect
+      // router.push("/dashboard")
     }
   }
 

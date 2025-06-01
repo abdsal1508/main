@@ -42,7 +42,10 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have been successfully logged in.",
       })
-      router.push("/dashboard")
+      // Add a small delay then redirect
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
