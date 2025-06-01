@@ -15,8 +15,8 @@ import { useAuth } from "@/components/auth-provider"
 import { Activity } from "lucide-react"
 
 const loginFormSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 })
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
@@ -24,7 +24,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>
 export default function LoginPage() {
   const router = useRouter()
   const { signIn, user, loading: authLoading } = useAuth()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -32,7 +32,6 @@ export default function LoginPage() {
       email: "",
       password: "",
     },
-    mode: "onChange",
   })
 
   // Redirect if already logged in
@@ -43,10 +42,8 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router])
 
-  const onSubmit = async (data: LoginFormValues) => {
-    if (isSubmitting) return
-
-    setIsSubmitting(true)
+  async function onSubmit(data: LoginFormValues) {
+    setLoading(true)
     console.log("Attempting login with:", data.email)
 
     try {
@@ -65,7 +62,7 @@ export default function LoginPage() {
         variant: "destructive",
       })
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
   }
 
@@ -109,7 +106,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -118,7 +115,7 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="john@example.com" type="email" autoComplete="email" {...field} />
+                        <Input placeholder="john@example.com" type="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -131,12 +128,7 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter your password"
-                          type="password"
-                          autoComplete="current-password"
-                          {...field}
-                        />
+                        <Input placeholder="Enter your password" type="password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -144,8 +136,8 @@ export default function LoginPage() {
                 />
               </CardContent>
               <CardFooter className="flex flex-col space-y-4">
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Signing in..." : "Sign in"}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign in"}
                 </Button>
                 <div className="text-center text-sm">
                   Don't have an account?{" "}
