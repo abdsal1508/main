@@ -54,7 +54,7 @@ export const authService = {
 
     if (error) {
       console.error("Error fetching user profile:", error)
-      // If profile doesn't exist, create it
+      // If profile doesn't exist, create it using user metadata
       const { data: newProfile, error: createError } = await supabase
         .from("users")
         .insert([
@@ -69,7 +69,18 @@ export const authService = {
         .select()
         .single()
 
-      if (createError) throw createError
+      if (createError) {
+        console.error("Error creating user profile:", createError)
+        // Return a basic user object if we can't create the profile
+        return {
+          id: user.id,
+          email: user.email!,
+          first_name: user.user_metadata?.first_name || "User",
+          last_name: user.user_metadata?.last_name || "Name",
+          role: user.user_metadata?.role || "staff",
+          created_at: user.created_at,
+        } as User
+      }
       return newProfile as User
     }
 
